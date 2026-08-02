@@ -1,0 +1,2 @@
+curl --fail --silent --show-error --request POST --header 'Content-Type: application/json' --data-binary @data/mytest_normalized.json http://127.0.0.1:8090/v1/evaluate --output report.json
+python3 -c 'import json; print(json.load(open("report.json"))["metrics"]["score"])'
