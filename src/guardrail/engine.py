@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 from common import GuardrailDecision, GuardrailRequest, Action, ReasonCode, Operation
 from guardrail.detectors import Detector, OrderedKeywordDetector, Signal
+from guardrail.detectors import QuotedContextDetector, ImminentSafetyDetector
 from guardrail.normalization import normalize_text, EVIDENCE_SEPARATOR
 from guardrail.policy import StarterPolicy
 from guardrail.vector_detector import create_starter_prototype_detector
@@ -23,6 +24,8 @@ class StarterGuardrail:
             tuple(detectors)
             if detectors is not None
             else (
+                QuotedContextDetector(),          # 1. Intercepts QUOTED_* (ALLOW_AS_DATA)
+                ImminentSafetyDetector(),         # 2. Intercepts urgent threats (ESCALATE)
                 OrderedKeywordDetector(),
                 create_starter_prototype_detector(),
             )

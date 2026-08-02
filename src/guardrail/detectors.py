@@ -83,3 +83,62 @@ class OrderedKeywordDetector:
             if any(keyword in flattened for keyword in rule.keywords):
                 return Signal(rule.action, rule.reason_code)
         return None
+
+
+class QuotedContextDetector(Detector):
+    """Перехватывает кейсы, где пользователь просит проанализировать цитату с триггерами."""
+    
+    ANALYSIS_TRIGGERS = {
+        "classify", "summarize", "identify", "explain", "review", 
+        "analyze", "check", "translate", "break down", "tell me what", 
+        "suspicious", "phishing", "scam", "warning signs"
+    }
+    INJECTION_KEYWORDS = {"ignore previous", "override", "disregard", "system prompt", "debug mode", "unrestricted", "reveal"}
+    SCAM_KEYWORDS = {"prize", "claim", "gift card", "wire transfer", "guaranteed", "verify your identity", "urgent", "millionaire", "won $"}
+    ABUSE_KEYWORDS = {"worthless", "pathetic", "stupid", "hate", "threat", "intimidate", "harass", "disappear", "kill"}
+
+    def detect(self, text: str) -> Signal | None:
+        from common.normalization import EVIDENCE_SEPARATOR
+        parts = text.split(EVIDENCE_SEPARATOR)
+        
+        # Если нет evidence, этот детектор не при чем
+        if len(parts) < 2:
+            return None
+            
+        message = parts[0].lower()
+        combined_evidence = " ".join(p.lower() for p in parts[1:])
+        
+        # Проверяем, что это именно запрос на анализ
+        if not any(trigger in message for trigger in self.ANALYSIS_TRIGGERS):
+            return None
+            
+        # Проверяем категории (триггер должен быть в evidence, но НЕ в message)
+        if any(kw in combined_evidence for kw in self.INJECTION_KEYWORDS):
+            if not any(kw in message for kw in self.INJECTION_KEYWORDS):
+                return Signal(Action.ALLOW_AS_DATA, ReasonCode.QUOTED_INJECTION)
+                
+        if any(kw in combined_evidence for kw in self.SCAM_KEYWORDS):
+            if not any(kw in message for kw in self.SCAM_KEYWORDS):
+                return Signal(Action.ALLOW_AS_DATA, ReasonCode.QUOTED_SCAM)
+                
+        if any(kw in combined_evidence for kw in self.ABUSE_KEYWORDS):
+            if not any(kw in message for kw in self.ABUSE_KEYWORDS):
+                return Signal(Action.ALLOW_AS_DATA, ReasonCode.QUOTED_ABUSE)
+                
+        return None
+
+
+class ImminentSafetyDetector(Detector):
+    """Детектирует прямые угрозы жизни или здоровью, требующие немедленной эскалации."""
+    TRIGGERS = {
+        "immediate danger", "hurt themselves", "urgent help", 
+        "kill me", "ending it all", "pills ready", 
+        "not wanting to be here", "pounding on it"
+    }
+
+    def detect(self, text: str) -> Signal | None:
+        text_lower = text.lower()
+        if any(trigger in text_lower for trigger in self.TRIGGERS):
+            return Signal(Action.ESCALATE, ReasonCode.IMMINENT_SAFETY_RISK)
+        return None
+
