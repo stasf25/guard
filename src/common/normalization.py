@@ -21,7 +21,7 @@ SUSPICIOUS_CONTROLS = frozenset(
     "\u206a\u206b\u206c\u206d\u206e\u206f"  # deprecated bidi controls
     "\ufeff"  # zero-width no-break space / BOM
 )
-
+EVIDENCE_SEPARATOR = "\u2063"  # Separator between ``message`` and ``evidence`` part for detectors
 
 @dataclass(frozen=True, slots=True)
 class NormalizedText:

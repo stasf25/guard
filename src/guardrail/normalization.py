@@ -3,7 +3,8 @@
 from common.normalization import (
     NormalizedText,
     SUSPICIOUS_CONTROLS,
+    EVIDENCE_SEPARATOR,
     normalize_text,
 )
 
-__all__ = ["NormalizedText", "SUSPICIOUS_CONTROLS", "normalize_text"]
+__all__ = ["NormalizedText", "SUSPICIOUS_CONTROLS", "EVIDENCE_SEPARATOR", "normalize_text"]
